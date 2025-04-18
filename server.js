@@ -37,16 +37,27 @@ app.post("/reset-database", (req, res) => {
 // API to seed test data
 app.post("/seed-database", (req, res) => {
     const users = req.body.users; // Get users from request body
-    const sql = "INSERT INTO users (name, email) VALUES ?";
     const values = users.map(user => [user.name, user.email]);
 
-    db.query(sql, [values], (err) => {
-        if (err) {
-            return res.status(500).json({ error: err.message });
+    // First, delete existing users
+    const deleteSql = "DELETE FROM users";
+
+    db.query(deleteSql, (deleteErr) => {
+        if (deleteErr) {
+            return res.status(500).json({ error: deleteErr.message });
         }
-        res.json({ message: "Test data seeded successfully" });
+
+        // Then, insert new users
+        const insertSql = "INSERT INTO users (name, email) VALUES ?";
+        db.query(insertSql, [values], (insertErr) => {
+            if (insertErr) {
+                return res.status(500).json({ error: insertErr.message });
+            }
+            res.json({ message: "Test data seeded successfully" });
+        });
     });
 });
+
 
 // API to fetch users from the database
 app.get("/get-users", (req, res) => {

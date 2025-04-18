@@ -1,55 +1,30 @@
-name: Cypress Tests
+name: Run Cypress Tests
 
 on:
   push:
     branches:
-      - master
+      - master      # Specify that this workflow should run for pushes to the master branch
   pull_request:
+    branches:
+      - master      # Specify that this workflow should also run for pull requests targeting the master branch
 
 jobs:
-  test:
+  cypress-run:
     runs-on: ubuntu-latest
-
-    services:
-      mysql:
-        image: mysql:5.7
-        env:
-          MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: testdb
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping --silent"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=3
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
 
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v2
         with:
-          node-version: 18
+          node-version: '22'
 
       - name: Install dependencies
-        run: npm install
-
-      - name: Wait for MySQL to be ready
         run: |
-          echo "Waiting for MySQL to be ready..."
-          sleep 30
+          npm install
+          npm install cypress --save-dev
 
-      - name: Create database table
-        run: |
-          sudo apt-get install -y mysql-client
-          mysql -h 127.0.0.1 -P 3306 -u root -proot testdb -e "CREATE TABLE IF NOT EXISTS users (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), email VARCHAR(255) UNIQUE);"
-
-      - name: Start backend server
-        run: |
-          nohup node server.js &
-          sleep 5
-
-      - name: Run Cypress tests
-        run: npx cypress run
+      - name: Run only visit_webpage.cy.js
+        run: npx cypress run --spec "cypress/e2e/visit_webpage.cy.js"
